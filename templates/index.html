@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart-Cure | Medicine Recommendation System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+  <div class="logo">✦ Smart<span>-Cure</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('diagnosis')">🩺 Diagnosis</button>
+    <button class="nav-tab" onclick="showTab('emergency')">🚨 Emergency</button>
+    <button class="nav-tab" onclick="showTab('hospitals')">🏥 Hospitals</button>
+  </div>
+</nav>
+
+<!-- ── DIAGNOSIS TAB ──────────────────────────────────────────────────────── -->
+<div id="tab-diagnosis" class="tab active">
+  <div class="hero">
+    <div class="hero-badge">✦ Kaggle Dataset · Random Forest ML Model · 41 Diseases · 131 Symptoms</div>
+    <h1>Your <em>Personal</em> Health Assistant</h1>
+    <p>Select your symptoms below. Our trained ML model will predict the most likely condition and provide medicine, diet, and lifestyle recommendations.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-title">🩺 Symptom Checker</div>
+    <div id="error-msg" class="alert alert-err hidden"></div>
+
+    <!-- User Info -->
+    <div class="form-grid">
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="pname" placeholder="e.g. Vaishnavi">
+      </div>
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="page" placeholder="e.g. 22" min="1" max="120">
+      </div>
+      <div class="field">
+        <label>Gender</label>
+        <select id="pgender">
+          <option value="">Select gender</option>
+          <option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Weight (kg)</label>
+        <input type="number" id="pweight" placeholder="e.g. 60">
+      </div>
+    </div>
+
+    <!-- Symptom Search -->
+    <div class="field" style="margin-bottom:1rem">
+      <label>Search & Select Symptoms</label>
+      <div style="position:relative">
+        <input type="text" id="sym-search" placeholder="🔍 Type symptom e.g. headache, fever, cough..." autocomplete="off" oninput="filterSymptoms()">
+        <div id="sym-dropdown" class="sym-dropdown hidden"></div>
+      </div>
+    </div>
+
+    <!-- Selected symptoms tags -->
+    <div id="selected-wrap" class="hidden" style="margin-bottom:1rem">
+      <label class="field-label">Selected Symptoms</label>
+      <div id="selected-tags"></div>
+    </div>
+
+    <!-- Voice Input -->
+    <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;">
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤 Voice Input</button>
+      <span style="font-size:0.78rem;color:var(--muted)">or search above · <strong id="sym-count">0</strong> symptoms selected</span>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="clearAll()">Clear</button>
+      <button class="btn btn-primary" onclick="analyzeSymptoms()">🔍 Analyze Symptoms</button>
+    </div>
+  </div>
+
+  <div id="loading" class="hidden"><div class="spinner"></div><p style="text-align:center;color:var(--muted);margin-top:0.5rem">Analyzing with Random Forest model...</p></div>
+  <div id="result-section" class="hidden"></div>
+</div>
+
+<!-- ── EMERGENCY TAB ──────────────────────────────────────────────────────── -->
+<div id="tab-emergency" class="tab">
+  <div class="page-wrap">
+    <div class="page-heading">🚨 Emergency Services</div>
+    <div class="page-sub">Quick access to ambulance, doctor chat, and hospital locator.</div>
+    <div class="em-actions">
+      <a href="tel:108" class="em-btn em-btn-red"><span class="em-icon">🚑</span><span>Call Ambulance</span><span style="font-size:0.75rem;opacity:0.75">108 — Emergency</span></a>
+      <a href="https://wa.me/918000000000?text=I%20need%20medical%20assistance.%20Please%20help!" target="_blank" class="em-btn em-btn-green"><span class="em-icon">💬</span><span>Chat with Doctor</span><span style="font-size:0.75rem;opacity:0.75">via WhatsApp</span></a>
+      <a href="https://www.google.com/maps/search/hospitals+near+me" target="_blank" class="em-btn em-btn-blue"><span class="em-icon">🗺</span><span>Nearby Hospitals</span><span style="font-size:0.75rem;opacity:0.75">Google Maps</span></a>
+    </div>
+    <div class="section-label">📞 Emergency Contacts</div>
+    <div class="contacts-grid">
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(220,38,38,0.08)">📞</div><div><div class="contact-name">National Emergency</div><div class="contact-number">112 (All India)</div></div></div>
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(220,38,38,0.08)">🚑</div><div><div class="contact-name">Ambulance</div><div class="contact-number">108</div></div></div>
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(37,99,235,0.08)">🚓</div><div><div class="contact-name">Police</div><div class="contact-number">100</div></div></div>
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(217,119,6,0.08)">🔥</div><div><div class="contact-name">Fire Service</div><div class="contact-number">101</div></div></div>
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(124,58,237,0.08)">🧠</div><div><div class="contact-name">Mental Health (KIRAN)</div><div class="contact-number">1800-599-0019</div></div></div>
+      <div class="contact-card"><div class="contact-icon" style="background:rgba(5,150,105,0.08)">👩‍⚕️</div><div><div class="contact-name">Women Helpline</div><div class="contact-number">1091</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HOSPITALS TAB ───────────────────────────────────────────────────────── -->
+<div id="tab-hospitals" class="tab">
+  <div class="page-wrap">
+    <div class="page-heading">🏥 Nearby Hospitals</div>
+    <div class="page-sub">Hospitals near your current location — detected in real time.</div>
+    <div id="loc-bar">
+      <span style="font-size:1.5rem">📍</span>
+      <div style="flex:1"><div id="loc-text">Detecting your location...</div><div id="loc-sub">Please allow location access when prompted</div></div>
+      <button class="btn btn-primary" onclick="getLocation()" style="padding:0.5rem 1rem;font-size:0.82rem;white-space:nowrap;">🔄 Refresh</button>
+    </div>
+    <div id="map-wrap"><iframe id="map-frame" width="100%" height="400" frameborder="0" style="display:block;" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <div id="maps-btn-wrap"><a id="open-maps-btn" href="#" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;">🗺 Open Full Map in Google Maps</a></div>
+    <div id="static-label">📋 Tumakuru Reference Hospitals</div>
+    <div class="hospital-grid" id="hospitalGrid"></div>
+  </div>
+</div>
+
+<footer>
+  <div>© 2025 Smart-Cure · Built by <strong>Vaishnavi</strong> · Dept of AI&ML, SSIT Tumkur</div>
+  <div class="footer-links">
+    <a href="#" onclick="showTab('diagnosis');return false;">Diagnosis</a>
+    <a href="#" onclick="showTab('emergency');return false;">Emergency</a>
+    <a href="#" onclick="showTab('hospitals');return false;">Hospitals</a>
+  </div>
+</footer>
+
+<script>
+// All symptoms from Flask
+const ALL_SYMPTOMS = {{ symptoms_raw | tojson }};
+const ALL_SYMPTOMS_DISPLAY = ALL_SYMPTOMS.map(s => s.replace(/_/g,' '));
+let selectedSymptoms = [];
+let recognition = null, isRecording = false;
+
+// ── TAB NAVIGATION ────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const idx = ['diagnosis','emergency','hospitals'].indexOf(id);
+  document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+  if (id === 'hospitals') { loadHospitals(); getLocation(); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── SYMPTOM SEARCH ────────────────────────────────────────────────────────────
+function filterSymptoms() {
+  const val = document.getElementById('sym-search').value.toLowerCase().trim();
+  const dd = document.getElementById('sym-dropdown');
+  if (!val) { dd.classList.add('hidden'); return; }
+  const matches = ALL_SYMPTOMS_DISPLAY.filter(s => s.includes(val) && !selectedSymptoms.includes(s)).slice(0,8);
+  if (!matches.length) { dd.classList.add('hidden'); return; }
+  dd.innerHTML = matches.map(s => `<div class="dd-item" onclick="addSymptom('${s}')">${s}</div>`).join('');
+  dd.classList.remove('hidden');
+}
+
+function addSymptom(sym) {
+  if (!selectedSymptoms.includes(sym)) {
+    selectedSymptoms.push(sym);
+    renderTags();
+  }
+  document.getElementById('sym-search').value = '';
+  document.getElementById('sym-dropdown').classList.add('hidden');
+}
+
+function removeSymptom(sym) {
+  selectedSymptoms = selectedSymptoms.filter(s => s !== sym);
+  renderTags();
+}
+
+function renderTags() {
+  const wrap = document.getElementById('selected-wrap');
+  const tags = document.getElementById('selected-tags');
+  document.getElementById('sym-count').textContent = selectedSymptoms.length;
+  if (!selectedSymptoms.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  tags.innerHTML = selectedSymptoms.map(s =>
+    `<span class="sym-tag">${s} <button onclick="removeSymptom('${s}')" class="tag-remove">✕</button></span>`
+  ).join('');
+}
+
+// close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('#sym-search') && !e.target.closest('#sym-dropdown'))
+    document.getElementById('sym-dropdown').classList.add('hidden');
+});
+
+// ── ANALYZE ───────────────────────────────────────────────────────────────────
+async function analyzeSymptoms() {
+  document.getElementById('error-msg').classList.add('hidden');
+  if (!selectedSymptoms.length) { showError('⚠ Please select at least one symptom.'); return; }
+
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('result-section').classList.add('hidden');
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({symptoms: selectedSymptoms})
+    });
+    const data = await res.json();
+    document.getElementById('loading').classList.add('hidden');
+    if (data.error) { showError('⚠ ' + data.error); return; }
+    renderResult(data);
+  } catch(e) {
+    document.getElementById('loading').classList.add('hidden');
+    showError('⚠ Server error. Make sure Flask is running.');
+  }
+}
+
+// ── RENDER RESULT ─────────────────────────────────────────────────────────────
+function renderResult(d) {
+  const name = document.getElementById('pname').value || 'Patient';
+  const sevLabel = d.severity > 15 ? '🔴 High Severity' : d.severity > 8 ? '🟡 Moderate' : '🟢 Mild';
+  const isEmergency = d.disease.toLowerCase().includes('heart attack') || d.disease.toLowerCase().includes('paralysis');
+
+  const top3HTML = d.top3.map((t,i) => `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border)${i===d.top3.length-1?';border:none':''}">
+      <div style="width:${t.confidence}%;height:6px;background:${i===0?'var(--teal)':i===1?'var(--blue)':'var(--muted)'};border-radius:4px;min-width:4px;transition:width 0.5s"></div>
+      <span style="font-size:0.82rem;font-weight:${i===0?'700':'400'};color:${i===0?'var(--teal)':'var(--text)'};white-space:nowrap">${t.disease} (${t.confidence}%)</span>
+    </div>`).join('');
+
+  const html = `
+    ${isEmergency ? `<div class="emergency-banner">🚨 EMERGENCY CONDITION DETECTED — Call 108 Immediately! <a href="tel:108" style="color:#fff;font-weight:700;">CALL NOW</a></div>` : ''}
+    <div class="result-header">
+      <div class="disease-icon">🩺</div>
+      <div style="flex:1">
+        <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.2rem">Predicted Condition for <strong>${name}</strong> · Confidence: <strong style="color:var(--teal)">${d.confidence}%</strong></div>
+        <div class="disease-name">${d.disease}</div>
+        <div class="disease-desc">${d.description}</div>
+        <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap">
+          <span class="pill teal">ML Predicted</span>
+          <span class="pill ${d.severity>15?'red':d.severity>8?'amber':'green'}">${sevLabel}</span>
+          <span class="pill blue">Random Forest</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matched Symptoms -->
+    <div class="result-card" style="margin-bottom:1rem">
+      <div class="result-card-title"><span class="dot dot-blue"></span>Matched Symptoms (${d.matched_symptoms.length})</div>
+      <div class="pill-list">${d.matched_symptoms.map(s=>`<span class="pill blue">✓ ${s}</span>`).join('')}</div>
+    </div>
+
+    <!-- Top 3 Predictions -->
+    <div class="result-card" style="margin-bottom:1rem">
+      <div class="result-card-title"><span class="dot dot-teal"></span>Top Predictions (Model Confidence)</div>
+      ${top3HTML}
+    </div>
+
+    <div class="result-grid">
+      <div class="result-card">
+        <div class="result-card-title"><span class="dot dot-teal"></span>Recommended Medicines</div>
+        ${d.medicines.map(m=>`
+          <div class="med-item">
+            <div class="med-icon">💊</div>
+            <div>
+              <div class="med-name">${m.name}</div>
+              <div class="med-dose">${m.dose}</div>
+              <div class="med-dose" style="font-style:italic">Side effects: ${m.side}</div>
+              <a href="https://www.apollopharmacy.in/search-medicines/${encodeURIComponent(m.name)}" target="_blank" class="buy-btn">🛒 Order via Apollo</a>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="result-card">
+        <div class="result-card-title"><span class="dot dot-amber"></span>Precautions</div>
+        <div class="pill-list">${d.precautions.map(p=>`<span class="pill amber">⚠ ${p}</span>`).join('')}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-title"><span class="dot dot-green"></span>Recommended Diet</div>
+        <div class="pill-list">${d.diet.map(i=>`<span class="pill green">🥗 ${i}</span>`).join('')}</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-title"><span class="dot dot-purple"></span>Workout & Activities</div>
+        <div class="pill-list">${d.workout.map(w=>`<span class="pill purple">🏃 ${w}</span>`).join('')}</div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <a href="https://wa.me/918000000000?text=I+have+${encodeURIComponent(d.disease)}+and+need+medical+help." target="_blank" class="btn btn-green">💬 Chat with Doctor</a>
+      <a href="https://www.google.com/maps/search/hospitals+near+me" target="_blank" class="btn btn-outline">🗺 Find Hospitals</a>
+      <a href="tel:108" class="btn btn-danger">🚑 Call Ambulance</a>
+    </div>
+    <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-bottom:2rem">⚠ This is an AI-based prediction for informational purposes only. Always consult a qualified doctor.</p>`;
+
+  const el = document.getElementById('result-section');
+  el.innerHTML = html;
+  el.classList.remove('hidden');
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── HOSPITALS ─────────────────────────────────────────────────────────────────
+async function loadHospitals() {
+  const grid = document.getElementById('hospitalGrid');
+  try {
+    const res = await fetch('/hospitals');
+    const hospitals = await res.json();
+    grid.innerHTML = hospitals.map(h=>`
+      <div class="hospital-card">
+        <span class="tag">🏥 ${h.type}</span>
+        <div class="hospital-name">${h.name}</div>
+        <div class="hospital-rating">${h.rating}</div>
+        <div class="hospital-meta">📍 ${h.address}<br>📞 ${h.phone}<br>🕐 ${h.open}</div>
+        <div class="hospital-actions">
+          <a href="https://www.google.com/maps/search/${encodeURIComponent(h.name+' Tumkur')}" target="_blank" class="buy-btn">🗺 Directions</a>
+          <a href="tel:${h.phone}" class="buy-btn">📞 Call</a>
+        </div>
+      </div>`).join('');
+  } catch(e) { grid.innerHTML = '<p style="color:var(--muted)">Could not load hospitals.</p>'; }
+}
+
+function getLocation() {
+  const locText = document.getElementById('loc-text');
+  const locSub  = document.getElementById('loc-sub');
+  if (!navigator.geolocation) { locText.textContent='Location not supported'; return; }
+  locText.textContent = 'Detecting your location...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const {latitude: lat, longitude: lng} = pos.coords;
+    locText.textContent = '✅ Location detected!';
+    locSub.textContent  = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+    document.getElementById('map-frame').src = `https://maps.google.com/maps?q=hospitals+near+me&ll=${lat},${lng}&z=14&output=embed`;
+    document.getElementById('map-wrap').style.display = 'block';
+    document.getElementById('maps-btn-wrap').style.display = 'block';
+    document.getElementById('static-label').style.display = 'block';
+    document.getElementById('open-maps-btn').href = `https://www.google.com/maps/search/hospitals/@${lat},${lng},14z`;
+  }, () => {
+    locText.textContent = '⚠ Location access denied';
+    locSub.textContent  = 'Showing Tumakuru reference hospitals below.';
+    document.getElementById('static-label').style.display = 'block';
+  }, {enableHighAccuracy:true, timeout:10000});
+}
+
+// ── VOICE ─────────────────────────────────────────────────────────────────────
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    alert('Voice input requires Chrome or Edge browser.'); return;
+  }
+  if (isRecording) { recognition.stop(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-IN'; recognition.continuous = false;
+  recognition.onstart = () => { isRecording=true; document.getElementById('voiceBtn').classList.add('recording'); document.getElementById('voiceBtn').textContent='🔴 Listening...'; };
+  recognition.onresult = e => {
+    const text = e.results[0][0].transcript.toLowerCase();
+    ALL_SYMPTOMS_DISPLAY.forEach(s => { if(text.includes(s) && !selectedSymptoms.includes(s)) addSymptom(s); });
+    document.getElementById('sym-search').value = text;
+  };
+  recognition.onend = () => { isRecording=false; document.getElementById('voiceBtn').classList.remove('recording'); document.getElementById('voiceBtn').innerHTML='🎤 Voice Input'; };
+  recognition.start();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function clearAll() {
+  selectedSymptoms = [];
+  renderTags();
+  document.getElementById('sym-search').value = '';
+  document.getElementById('result-section').classList.add('hidden');
+  document.getElementById('error-msg').classList.add('hidden');
+  ['pname','page','pgender','pweight'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
